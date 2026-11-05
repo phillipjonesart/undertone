@@ -1,11 +1,13 @@
 let hueS, satS, briS, sizeS;
 let choice = 0;
 let drawing = false;
+let px = 0; // left edge of the brush panel
+let clearBtn, saveBtn;
 const names = ['Pen', 'Pencil', 'Paintbrush', 'Blur', 'Eraser', 'Marker', 'Calligraphy', 'Spray', 'Watercolor', 'Dots'];
 
 function setup() {
   pixelDensity(1);
-  let cnv = createCanvas(800, 640);
+  let cnv = createCanvas(windowWidth, windowHeight);
   cnv.position(0, 0);
   cnv.style('touch-action', 'none');
   colorMode(HSB, 360, 100, 100, 100);
@@ -15,22 +17,36 @@ function setup() {
   satS = createSlider(0, 100, 60);
   briS = createSlider(0, 100, 30);
   sizeS = createSlider(4, 60, 20);
+  clearBtn = createButton('clear');
+  clearBtn.mousePressed(clearCanvas);
+  saveBtn = createButton('save');
+  saveBtn.mousePressed(saveImg);
+  placeControls();
+}
+
+// put the panel on the right edge of the window
+function placeControls() {
+  px = width - 200;
   let all = [hueS, satS, briS, sizeS];
   for (let i = 0; i < 4; i++) {
-    all[i].position(610, 25 + i * 45);
+    all[i].position(px + 10, 25 + i * 45);
     all[i].style('width', '170px');
   }
+  clearBtn.position(px + 10, 600);
+  saveBtn.position(px + 100, 600);
+}
 
-  let clearBtn = createButton('clear');
-  clearBtn.position(610, 600);
-  clearBtn.mousePressed(clearCanvas);
-  let saveBtn = createButton('save');
-  saveBtn.position(700, 600);
-  saveBtn.mousePressed(saveImg);
+// keep the drawing when the window changes size
+function windowResized() {
+  let old = get(0, 0, px, height);
+  resizeCanvas(windowWidth, windowHeight);
+  background(0, 0, 100);
+  image(old, 0, 0);
+  placeControls();
 }
 
 function draw() {
-  if (drawing) {
+  if (drawing && mouseX < px) {
     brush(choice, mouseX, mouseY, pmouseX, pmouseY, sizeS.value());
   }
   drawPanel();
@@ -106,20 +122,20 @@ function brush(i, x, y, px, py, s) {
 function drawPanel() {
   noStroke();
   fill(0, 0, 92);
-  rect(600, 0, 200, 640);
+  rect(px, 0, 200, height);
 
   fill(0, 0, 0);
   textSize(12);
-  text('Hue', 610, 20);
-  text('Saturation', 610, 65);
-  text('Brightness', 610, 110);
-  text('Size', 610, 155);
+  text('Hue', px + 10, 20);
+  text('Saturation', px + 10, 65);
+  text('Brightness', px + 10, 110);
+  text('Size', px + 10, 155);
 
   fill(hueS.value(), satS.value(), briS.value());
-  rect(610, 185, 170, 10);
+  rect(px + 10, 185, 170, 10);
 
   for (let i = 0; i < 10; i++) {
-    let bx = 605 + (i % 2) * 100;
+    let bx = px + 5 + (i % 2) * 100;
     let by = 205 + floor(i / 2) * 77;
 
     noStroke();
@@ -159,9 +175,9 @@ function drawPanel() {
 }
 
 function startPress() {
-  drawing = mouseX < 600 && mouseY < 600;
+  drawing = mouseX < px;
   for (let i = 0; i < 10; i++) {
-    let bx = 605 + (i % 2) * 100;
+    let bx = px + 5 + (i % 2) * 100;
     let by = 205 + floor(i / 2) * 77;
     if (mouseX > bx && mouseX < bx + 90 && mouseY > by && mouseY < by + 70) {
       choice = i;
@@ -187,11 +203,13 @@ function touchEnded() {
 }
 
 function clearCanvas() {
-  background(0, 0, 100);
+  noStroke();
+  fill(0, 0, 100);
+  rect(0, 0, px, height);
 }
 
 function saveImg() {
-  save(get(0, 0, 600, 600), 'drawing.png');
+  save(get(0, 0, px, height), 'drawing.png');
 }
 
 function keyPressed() {
